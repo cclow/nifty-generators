@@ -6,7 +6,7 @@ class NiftyAuthenticationGenerator < Rails::Generator::Base
     super
     
     @user_name = @args[0] || 'user'
-    @session_name = @args[1] || (options[:authlogic] ? @user_name + '_session' : 'session')
+    @session_name = @args[1] || @user_name + '_session'
   end
   
   def manifest
@@ -19,7 +19,7 @@ class NiftyAuthenticationGenerator < Rails::Generator::Base
       
       m.directory "app/views/#{user_plural_name}"
       m.template "user.rb", "app/models/#{user_singular_name}.rb"
-      m.template "authlogic_session.rb", "app/models/#{user_singular_name}_session.rb" if options[:authlogic]
+      m.template "authlogic_session.rb", "app/models/#{user_singular_name}_session.rb"
       m.template "users_controller.rb", "app/controllers/#{user_plural_name}_controller.rb"
       m.template "users_helper.rb", "app/helpers/#{user_plural_name}_helper.rb"
       m.template "views/#{view_language}/signup.html.#{view_language}", "app/views/#{user_plural_name}/new.html.#{view_language}"
@@ -40,25 +40,14 @@ class NiftyAuthenticationGenerator < Rails::Generator::Base
       
       m.insert_into "app/controllers/#{application_controller_name}.rb", 'include Authentication'
       
-      if test_framework == :rspec
-        m.directory "spec"
-        m.directory "spec/fixtures"
-        m.directory "spec/controllers"
-        m.directory "spec/models"
-        m.template "fixtures.yml", "spec/fixtures/#{user_plural_name}.yml"
-        m.template "tests/rspec/user.rb", "spec/models/#{user_singular_name}_spec.rb"
-        m.template "tests/rspec/users_controller.rb", "spec/controllers/#{user_plural_name}_controller_spec.rb"
-        m.template "tests/rspec/sessions_controller.rb", "spec/controllers/#{session_plural_name}_controller_spec.rb"
-      else
-        m.directory "test"
-        m.directory "test/fixtures"
-        m.directory "test/functional"
-        m.directory "test/unit"
-        m.template "fixtures.yml", "test/fixtures/#{user_plural_name}.yml"
-        m.template "tests/#{test_framework}/user.rb", "test/unit/#{user_singular_name}_test.rb"
-        m.template "tests/#{test_framework}/users_controller.rb", "test/functional/#{user_plural_name}_controller_test.rb"
-        m.template "tests/#{test_framework}/sessions_controller.rb", "test/functional/#{session_plural_name}_controller_test.rb"
-      end
+      m.directory "test"
+      m.directory "test/blueprints"
+      m.directory "test/functional"
+      m.directory "test/unit"
+      m.template "tests/#{test_framework}/user.rb", "test/unit/#{user_singular_name}_test.rb"
+      m.template "tests/#{test_framework}/users_controller.rb", "test/functional/#{user_plural_name}_controller_test.rb"
+      m.template "tests/#{test_framework}/sessions_controller.rb", "test/functional/#{session_plural_name}_controller_test.rb"
+      m.template "tests/blueprints/users.rb", "test/blueprints/#{user_plural_name}.rb"
     end
   end
   
@@ -105,17 +94,13 @@ protected
   end
   
   def test_framework
-    options[:test_framework] ||= File.exist?(destination_path("spec")) ? :rspec : :testunit
+    options[:test_framework] ||= File.exist?(destination_path("spec")) ? :rspec : :shoulda
   end
   
   def add_options!(opt)
     opt.separator ''
     opt.separator 'Options:'
-    opt.on("--testunit", "Use test/unit for test files.") { options[:test_framework] = :testunit }
-    opt.on("--rspec", "Use RSpec for test files.") { options[:test_framework] = :rspec }
-    opt.on("--shoulda", "Use Shoulda for test files.") { options[:test_framework] = :shoulda }
     opt.on("--haml", "Generate HAML views instead of ERB.") { |v| options[:haml] = true }
-    opt.on("--authlogic", "Use Authlogic for authentication.") { |v| options[:authlogic] = true }
   end
   
   def banner
