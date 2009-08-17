@@ -12,6 +12,7 @@ class <%= session_plural_class_name %>ControllerTest < ActionController::TestCas
     setup do
       @hash = <%= user_class_name %>.plan
       @<%= user_singular_name %> = <%= user_class_name %>.create(@hash)
+      <%= session_class_name %>.find.destroy
     end
 
     should "render new template when authentication is invalid" do
